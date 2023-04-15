@@ -32,11 +32,11 @@ Future versions may prompt the user for the buoy number and the time window to d
 # Output
 The script will output the following information:
 
-Measured significant wave height
-Pierson-Moskowitz significant wave height
-Centroid of the measured wave spectrum
-Centroid of Pierson-Moskowitz spectrum
-Effective significant wave height
+Measured significant wave height, 
+Pierson-Moskowitz significant wave height, 
+Centroid of the measured wave spectrum, 
+Centroid of Pierson-Moskowitz spectrum, 
+Effective significant wave height, 
 It will also display a plot of the length-adjusted wave height over time.
 
 # Contributing
