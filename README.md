@@ -24,8 +24,7 @@ CDIP PM LA SWH Calculator_v1.0.py
 
 The script currently uses the two main buoys for AVTB in realtime (most recent 12 hour period):
 
-'045':  Oceanside Harbor
-'264':  Red Beach
+'045':  Oceanside Harbor and '264':  Red Beach
 
 Future versions may prompt the user for the buoy number and the time window to download data for.
 
