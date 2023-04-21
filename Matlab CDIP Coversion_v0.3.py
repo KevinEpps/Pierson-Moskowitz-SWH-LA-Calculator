@@ -7,6 +7,12 @@ import pytz
 import cftime
 import pandas as pd
 
+def safe_divide(a, b):
+    if b == 0 or np.isnan(b):
+        return 0  # or any other value you consider appropriate for this case
+    else:
+        return a / b
+
 magnetic_declination = 11.53199; # From NOAA for zip code 92054 (Camp Pendleton) as of 2019-Aug-14
 
 # Set the buoy station ID and time range for data download
@@ -57,12 +63,13 @@ buoy_data_subset = {
     'wave_mean_direction_deg_true': wave_mean_direction_deg_true,
 }
 
+length_adjusted_pm_heights = np.zeros(len(time_available))
 length_adjusted_table = pd.DataFrame()
 sea_state_table = pd.DataFrame()
 estimated_surf_height_table = pd.DataFrame()
 estimated_surf_period_table = pd.DataFrame()
 
-for process_number in range(len(buoy_data_subset)):
+for process_number in range(len(buoy_data_subset['time_available'])):
 
   #Calculate Wave Energy
 
@@ -73,9 +80,9 @@ for process_number in range(len(buoy_data_subset)):
   #Create an array for bandwidth
   bandwidth = np.zeros((len_wavefreq, 1))
 
-  for x in range(len_wavefreq-1, 1):
-      bandwidth[x, 1] = (wave_frequency[x, 1] - wave_frequency[x-1, 1])/2 + \
-                        (wave_frequency[x+1, 1] - wave_frequency[x, 1])/2
+  for x in range(1, len_wavefreq-1):
+      bandwidth[x] = (wave_frequency[x] - wave_frequency[x-1])/2 + \
+                        (wave_frequency[x+1] - wave_frequency[x])/2
 
   # The first bandwidth point is equal to the second bandwidth point
   bandwidth[0, 0] = bandwidth[1, 0]
@@ -121,6 +128,7 @@ for process_number in range(len(buoy_data_subset)):
   # This is done by multiplying the raw energy data by a factor of 10.76 to convert from m^2 to ft^2
   total_energy_density = wave_energy * 10.76391042
 
+
   # Calculate the Smoothed Total Energy Density.  Use the formula below to
   # calculate the Smoothed Total Energy Density from the Total Energy Density
   smoothed_total_energy_density = np.zeros((len_wavefreq, 1))
@@ -131,6 +139,7 @@ for process_number in range(len(buoy_data_subset)):
                                             + total_energy_density[x+1, 0] / 4)
 
   smoothed_total_energy_density[len_wavefreq-1, 0] = smoothed_total_energy_density[len_wavefreq-2, 0]
+
 
   # Calculate the M0 Ordinate using the smooth total energy density. This is
   # done by multiplying the bandwidth and the smoothed total energy density together
@@ -145,7 +154,8 @@ for process_number in range(len(buoy_data_subset)):
 
   for x in range(0, len_wavefreq):
       smoothed_total_energy_M1[x] = wave_frequency[x] * smoothed_total_energy_density_M0[x]
-  
+
+
   # Calculate the smoothed slope energy density which is the difference
   # between the smoothed total energy density 
   smoothed_slope_energy_density = np.zeros((len_wavefreq, 1))
@@ -288,7 +298,13 @@ for process_number in range(len(buoy_data_subset)):
   # Calculate the coefficients for the Pierson_Moskowitz equation
 
   a_coef_pm = 0.0081*(32.2**2) #32.2 is gravity in ft/s^2
-  b_coef_pm = -0.032*(32.2/H_pm)**2 #32.2 is gravity in ft/s^2
+
+  if H_pm != 0:
+    b_coef_pm = -0.032 * (32.2 / H_pm) ** 2
+  else:
+    b_coef_pm = 0  # or any other value you consider appropriate for this case
+
+  #b_coef_pm = -0.032*(32.2/H_pm)**2 #32.2 is gravity in ft/s^2
 
 
   # Calculate the Pierson_Moskowitz Energy Density using the Pierson
@@ -331,10 +347,13 @@ for process_number in range(len(buoy_data_subset)):
 
   # Calculate the Swell Length
 
-  swell_length = sum(swell_energy_density_M0) / sum(swell_energy_density_M1) # Divide the sums of the swell energy density M0 ordinate by the M1 Ordinate
+  #swell_length = sum(swell_energy_density_M0) / sum(swell_energy_density_M1) # Divide the sums of the swell energy density M0 ordinate by the M1 Ordinate
+  swell_length = safe_divide(sum(swell_energy_density_M0), sum(swell_energy_density_M1))
 
-  swell_mean_period = 1 / swell_length # Get the swell mean period
-  swell_mean_period = 1 / swell_mean_period
+  #swell_mean_period = 1 / swell_length # Get the swell mean period
+  swell_mean_period = safe_divide(1, swell_length)  # Get the swell mean period
+  #swell_mean_period = 1 / swell_mean_period
+  swell_mean_period = safe_divide(1, swell_mean_period)
   swell_length = 5.12 * swell_mean_period ** 2 # Use the equation to get the swell length
 
   # Calculate the Swell Direction by finding the mean direction at the max
@@ -369,8 +388,10 @@ for process_number in range(len(buoy_data_subset)):
   sea_significant_height = ((sum(sea_energy_density_M0))**0.5) * 4
 
   # Calculate the Average length
-  average_length = sum(sea_energy_density_M1)/sum(sea_energy_density_M0)
-  average_length = 1/average_length
+  #average_length = sum(sea_energy_density_M1)/sum(sea_energy_density_M0)
+  average_length = safe_divide(sum(sea_energy_density_M1), sum(sea_energy_density_M0))
+  #average_length = 1/average_length
+  average_length = safe_divide(1, average_length)
   average_length = 5.12*average_length**2
 
   # Calculate the sea modal time
@@ -393,8 +414,10 @@ for process_number in range(len(buoy_data_subset)):
 
   #Calculate the Sea Mean Period
   sea_mean_period = sum(sea_energy_density_M0)
-  sea_mean_period = sum(sea_energy_density_M1) / sea_mean_period
-  sea_mean_period = 1 / sea_mean_period
+  sea_mean_period = safe_divide(sum(sea_energy_density_M1), sea_mean_period)
+  #sea_mean_period = sum(sea_energy_density_M1) / sea_mean_period
+  #sea_mean_period = 1 / sea_mean_period
+  sea_mean_period = safe_divide(1, sea_mean_period)
 
   #Calculate the Sea 1/10 height.
   sea_110_height = 5.1 * sum(sea_energy_density_M0) ** 0.5
@@ -418,10 +441,13 @@ for process_number in range(len(buoy_data_subset)):
       heading_warning = 'none'
 
   # Calculate the length adjusted PM Height
-  length_adjusted_pm_height = sum(pm_M1) / sum(pm_M0)
-  length_adjusted_pm_height = 1 / length_adjusted_pm_height
+  #length_adjusted_pm_height = sum(pm_M1) / sum(pm_M0)
+  length_adjusted_pm_height = safe_divide(sum(pm_M1), sum(pm_M0))
+  #length_adjusted_pm_height = 1 / length_adjusted_pm_height
+  length_adjusted_pm_height = safe_divide(1, length_adjusted_pm_height)
   length_adjusted_pm_height = 5.12 * length_adjusted_pm_height ** 2
-  length_adjusted_pm_height = (length_adjusted_pm_height / average_length) ** 0.5
+  #length_adjusted_pm_height = (length_adjusted_pm_height / average_length) ** 0.5
+  length_adjusted_pm_height = (safe_divide(length_adjusted_pm_height, average_length)) ** 0.5
 
   if length_adjusted_pm_height > 1:
       length_adjusted_pm_height = 1
@@ -431,8 +457,7 @@ for process_number in range(len(buoy_data_subset)):
   else:
     length_adjusted_pm_height = length_adjusted_pm_height * sea_significant_height * 1.05
 
-  # If the heading warning is none then the length adjust pm height is
-  # multiplied by 1.025
+  # If the heading warning is none then the length adjust pm height is multiplied by 1.025
 
   if 'none' not in heading_warning.lower():
     length_adjusted_pm_height *= 1.025
@@ -484,6 +509,7 @@ for process_number in range(len(buoy_data_subset)):
   sea_state = sea_state_level + sea_state_level_number
   sea_state_short = str(sea_state)
 
+  length_adjusted_pm_heights[process_number] = length_adjusted_pm_height
   length_adjusted_table['Length_Adjusted_PM_Height'] = np.round(length_adjusted_pm_height, 1)
   sea_state_table['Sea_State'] = sea_state_short
   estimated_surf_height_table['Estimated_Surf_Height'] = np.round(estimated_surf_height, 1)
@@ -493,4 +519,17 @@ for process_number in range(len(buoy_data_subset)):
 
   buoy_data_subset.update(calculations_table) # Add to the subset table
 
-  print(calculations_table)
+plt.figure(figsize=(12, 6))
+plt.plot(time_available, significant_wave_height_feet, label='Significant Wave Height (ft)', linestyle='-')
+plt.plot(time_available, length_adjusted_pm_heights, label='Length Adjusted PM Height (ft)', linestyle='-')
+plt.xlabel('Time')
+plt.ylabel('Height (ft)')
+plt.title('Significant Wave Height and Length Adjusted PM Height')
+plt.legend()
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+print('Sea State: ', sea_state_short)
+print('Significant Wave Height (ft)', np.round(significant_wave_height_feet[-1], 2))
+print('Length Adjusted PM Height (ft)', np.round(length_adjusted_pm_heights[-1], 2))
