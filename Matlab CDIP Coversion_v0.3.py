@@ -18,7 +18,7 @@ magnetic_declination = 11.53199; # From NOAA for zip code 92054 (Camp Pendleton)
 # Set the buoy station ID and time range for data download
 stn = '045'
 end_time_utc = datetime.utcnow()
-start_time_utc = end_time_utc - timedelta(hours=24)
+start_time_utc = end_time_utc - timedelta(hours=12)
 
 # Set the timezones for the start and end times
 utc_tz = pytz.timezone('UTC')
