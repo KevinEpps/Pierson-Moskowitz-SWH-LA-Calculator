@@ -52,6 +52,28 @@ waveHs_ft = waveHs * 3.28084
 # Convert waveEnergyDensity from square meters to square feet
 waveEnergyDensity_ft2 = waveEnergyDensity * 10.764
 
+def remove_swell_energy(energy_density, frequency_range):
+    modified_energy_density = np.copy(energy_density)
+    idx_closest_to_0_100_hz = np.argmin(np.abs(frequency_range - 0.100))
+    energy_density_0_100_hz = energy_density[:, idx_closest_to_0_100_hz]
+    swell_max = np.max(energy_density_0_100_hz)
+
+    for t in range(energy_density.shape[0]):
+        for i, freq in enumerate(frequency_range):
+            if 0.025 <= freq <= 0.095:
+                factor = 1 - energy_density_0_100_hz[t] * ((freq / 0.025) / 0.075) ** 8 / energy_density[t, i]
+                factor = max(0, factor)  # Ensure the factor is non-negative
+                modified_energy_density[t, i] = energy_density[t, i] * factor
+    return modified_energy_density
+
+
+def calculate_normalized_swh(energy_density, frequency_range, m1_ordinate_measured, m1_ordinate_desired):
+    energy_density_no_swell = remove_swell_energy(energy_density, frequency_range)
+    m1_ordinate_no_swell = calculate_m1(energy_density_no_swell, frequency_range)
+    swh_no_swell = calculate_swh(energy_density_no_swell, frequency_range)
+    normalized_swh = normalize_swh(swh_no_swell, m1_ordinate_measured, m1_ordinate_desired)
+    return normalized_swh
+
 def calculate_swh(waveEnergyDensity_ft2, waveFrequency):
     # Calculate the frequency intervals (delta_f) for the wave energy density data
     delta_f = np.diff(waveFrequency)
@@ -66,9 +88,6 @@ def calculate_swh(waveEnergyDensity_ft2, waveFrequency):
     return swh
 
 swh_calculated_ft = calculate_swh(waveEnergyDensity_ft2, waveFrequency)
-
-#print(waveHs_ft)
-#print(swh_calculated_ft)
 
 def calculate_m1(waveEnergyDensity_ft2, waveFrequency):
     # Calculate the frequency intervals (delta_f) for the wave energy density data
@@ -111,7 +130,11 @@ mean_period_desired = 3.73  # Tp for 3' PM SWH - Based off of 71.18ft average le
 length_desired = 5.12 * (mean_period_desired ** 2)
 m1_ordinate_desired = 1 / mean_period_desired
 
-normalized_swh_ft = normalize_swh(swh_calculated_ft, m1_ordinate, m1_ordinate_desired)
+# Remove the swell energy from the energy density
+waveEnergyDensity_ft2_no_swell = remove_swell_energy(waveEnergyDensity_ft2, waveFrequency)
+
+# Calculate the normalized significant wave height using only the sea energy density
+normalized_swh_ft = calculate_normalized_swh(waveEnergyDensity_ft2, waveFrequency, m1_ordinate, m1_ordinate_desired)
 
 def plot_swh(time_array, waveHs_ft, swh_calculated, normalized_swh):
     fig, ax = plt.subplots()
@@ -139,9 +162,46 @@ def plot_swh(time_array, waveHs_ft, swh_calculated, normalized_swh):
     # Show the plot
     plt.show()
 
+def plot_energy_density_spectrum(waveEnergyDensity_ft2, waveEnergyDensity_ft2_no_swell, waveFrequency, time_index):
+    fig, ax = plt.subplots()
+
+    # Plot the original energy density spectrum
+    ax.plot(waveFrequency, waveEnergyDensity_ft2[time_index], label='Swell and Sea Energy Density', linestyle='-')
+
+    # Plot the modified energy density spectrum
+    ax.plot(waveFrequency, waveEnergyDensity_ft2_no_swell[time_index], label='Sea Energy Density', linestyle='-')
+
+    # Add labels, title, and legend
+    ax.set_xlabel('Frequency (Hz)')
+    ax.set_ylabel('Energy Density (ft^2/Hz)')
+    ax.set_title('Energy Density Spectrum Comparison')
+    ax.legend()
+
+    # Show the plot
+    plt.show()
+
+def calculate_m0(waveEnergyDensity_ft2, waveFrequency):
+    # Calculate the frequency intervals (delta_f) for the wave energy density data
+    delta_f = np.diff(waveFrequency)
+    delta_f = np.append(delta_f, delta_f[-1])  # Repeat the last delta_f for the last frequency
+
+    # Integrate the wave energy density spectrum over the frequency range
+    m0 = np.sum(waveEnergyDensity_ft2 * delta_f, axis=1)
+
+    return m0
+
+m0_original = calculate_m0(waveEnergyDensity_ft2, waveFrequency)
+m0_modified = calculate_m0(waveEnergyDensity_ft2_no_swell, waveFrequency)
+
+#print('M0 (Original Energy Density (Swell and Sea)):', m0_original[-1])
+#print('M0 (Sea Energy Density):', m0_modified[-1])
+
+
 # Call the function to plot the data
 plot_swh(time_array, waveHs_ft, swh_calculated_ft, normalized_swh_ft)
 
 print('Significant Wave Height (ft)', np.round(waveHs_ft[-1], 2))
 print('Estimated Pierson-Moskowitz Wave Height (ft)', np.round(swh_calculated_ft[-1], 2))
-print('Normalized Significant Wave Height (ft)', np.round(normalized_swh_ft[-1], 2))
+print('Normalized Sea Significant Wave Height (ft)', np.round(normalized_swh_ft[-1], 2))
+
+plot_energy_density_spectrum(waveEnergyDensity_ft2, waveEnergyDensity_ft2_no_swell, waveFrequency, -1)
