@@ -235,7 +235,6 @@ def normalize_swh(swh_measured, m1_ordinate_measured, m1_ordinate_desired):
 
     return normalized_swh
 
-
 def plot_swh(time_array, waveHs_ft, swh_calculated, normalized_swh):
     """
     Plot measured, calculated, and normalized significant wave height (SWH) over time.
@@ -248,13 +247,13 @@ def plot_swh(time_array, waveHs_ft, swh_calculated, normalized_swh):
     fig, ax = plt.subplots()
 
     # Plot the measured significant wave height
-    ax.plot(time_array, waveHs_ft, label='Measured SWH (ft)', linestyle='-')
+    ax.plot(time_array, waveHs_ft, label='Measured Buoy Significant Wave Height (ft)', linestyle='-')
 
     # Plot the calculated significant wave height
-    ax.plot(time_array, swh_calculated, label='Calculated SWH (ft)', linestyle='-')
+    ax.plot(time_array, swh_calculated, label='Estimated Pierson-Moskowitz Wave Height (ft)', linestyle='-')
 
     # Plot the normalized significant wave height
-    ax.plot(time_array, normalized_swh, label='Normalized SWH (ft)', linestyle='-')
+    ax.plot(time_array, normalized_swh, label='3ft Length-Adjusted Significant Wave Height (ft)', linestyle='-')
 
     # Set the date format for the x-axis
     date_format = mdates.DateFormatter('%Y-%m-%d %H:%M')
@@ -266,6 +265,20 @@ def plot_swh(time_array, waveHs_ft, swh_calculated, normalized_swh):
     ax.set_ylabel('Significant Wave Height (ft)')
     ax.set_title('Measured vs. Calculated vs. Normalized Significant Wave Height')
     ax.legend()
+
+    # Create the table data
+    table_data = [
+        ["Measured Buoy Significant Wave Height (ft)", f"{waveHs_ft[-1]:.2f}"],
+        ["Estimated Pierson-Moskowitz Wave Height (ft)", f"{swh_calculated_ft[-1]:.2f}"],
+        ["3ft Length-Adjusted Significant Wave Height (ft)", f"{normalized_swh_ft[-1]:.2f}"]
+    ]
+
+    # Create the table
+    table = plt.table(cellText=table_data, colWidths=[0.5, 0.3], cellLoc='left',
+                      loc='bottom', bbox=[0.1, -0.65, 0.8, 0.25])
+
+    # Adjust the plot layout to make room for the table
+    plt.subplots_adjust(bottom=0.25)
 
     # Show the plot
     plt.show()
