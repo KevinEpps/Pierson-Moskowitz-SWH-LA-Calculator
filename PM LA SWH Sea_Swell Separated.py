@@ -1,3 +1,17 @@
+# CDIP Buoy Processor
+
+'''
+This program was developed by Kevin Epps from the Engineering section 
+at the Amphibious Vehicle Test Branch (AVTB), based on a MATLAB 
+program developed by Mike Slivka.  It's purpose is to download 
+wave buoy data from the Coastal Data Information Program (CDIP) and 
+display it in a way that is useful for test planning and analysis.  
+CDIP is run by the Scripps Institution of Oceanography
+(SIO) at the University of California San Diego (UCSD).
+
+https://cdip.ucsd.edu/
+'''
+
 import netCDF4
 import numpy as np
 import matplotlib.pyplot as plt
