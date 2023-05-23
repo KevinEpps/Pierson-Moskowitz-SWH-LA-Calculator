@@ -22,9 +22,10 @@ pytz
 To run the script, execute the following command:
 CDIP PM LA SWH Calculator_v1.0.py
 
-The script currently uses the two main buoys for AVTB in realtime (most recent 12 hour period):
+The script currently uses the two main buoys for AVTB in realtime and two in Oregon (most recent 24 hour period):
 
 '045':  Oceanside Harbor and '264':  Red Beach
+'162': 'Clatsop Spit' and '179': 'Astoria Canyon'
 
 Future versions may prompt the user for the buoy number and the time window to download data for.
 
