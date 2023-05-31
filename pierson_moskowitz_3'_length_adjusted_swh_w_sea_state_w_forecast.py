@@ -40,7 +40,8 @@ station_names = {
     '045': 'Oceanside Harbor',
     '179': 'Astoria Canyon',
     '162': 'Clatsop Spit',
-    '264': 'Red Beach'
+    '264': 'Red Beach',
+    '271': 'Green Beach'
     # Add more stations as needed
 }
 
