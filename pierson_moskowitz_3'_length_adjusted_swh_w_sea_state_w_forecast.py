@@ -48,7 +48,6 @@ station_names = {
 def download_wave_data(stn, start_time, end_time):
     
     data_url = f'http://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/realtime/{stn}p1_rt.nc'
-    forecast_url = f'http://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/model/MOP_validation/BP{stn}_forecast.nc'
     nc = netCDF4.Dataset(data_url)
     time_var = nc.variables['waveTime']
     start_index = netCDF4.date2index(start_time, time_var, select='nearest')
@@ -66,7 +65,8 @@ def download_wave_data(stn, start_time, end_time):
 #Download and extract necessary variables for forecast
 def download_wave_data_forecast(stn, start_time_f, end_time_f):
     
-    forecast_url = f'http://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/model/MOP_validation/BP{stn}_forecast.nc'
+    #forecast_url = f'http://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/model/MOP_validation/BP{stn}_forecast.nc' #Old way of forecasting on CDIP
+    forecast_url = f'http://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/model/MOP_validation/BP{stn}_ecmwf_fc.nc' #Using ECMWF (European Centre for Medium-Range Weather Forecasts)
     nc = netCDF4.Dataset(forecast_url)
     time_var_f = nc.variables['waveTime']
     start_index_f = netCDF4.date2index(start_time_f, time_var_f, select='nearest')
