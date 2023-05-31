@@ -297,15 +297,15 @@ results_df = pd.DataFrame(results, columns=['Time', 'Buoy Wave Height (ft)', 'CM
 #print('CM Normalization Factor', cm)
 
 # Prints the 'Calculated Total Height', which is also the reported significant wave height form the buoy
-print('Calculated PM Total Height', round(measured_sig_height, 2))
+print('Calculated PM Total Height', round(measured_sig_height, 2), 'ft')
 
 # Prints the 'Length Adjusted Height', which is the 3' normalized PM SWH
-print('PM 3ft Length Adjusted Height', round(length_adjusted_height, 2))
+print('PM 3ft Length Adjusted Height', round(length_adjusted_height, 2), 'ft')
 
 # Plots the buoy reported SWH vs the calculated SWH vs the normalized SWH
 plt.figure(figsize=(12, 6))
 plt.plot(results_df['Time'], results_df['Buoy Wave Height (ft)'], label='Buoy Wave Height (ft)')
-plt.plot(results_df['Time'], results_df['Calculated Total Height'], label='Calculated Buoy Height (ft)')
+#plt.plot(results_df['Time'], results_df['Calculated Total Height'], label='Calculated Buoy Height (ft)') #Use for troubleshooting
 plt.plot(results_df['Time'], results_df['Length Adjusted Height'], label='Length Adjusted Height (ft)')
 
 # Add forecasts for buoy and length adjusted
